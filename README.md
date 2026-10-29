@@ -2,7 +2,9 @@
 
 Only your best bookmarks get seen. It runs inside Chrome while you browse.
 
-![The Grokmark homepage: Send the best X bookmarks to your team](docs/homepage.png)
+[![The Grokmark homepage: Send the best X bookmarks to your team](docs/homepage.png)](https://grokmark.si)
+
+See it at **[grokmark.si](https://grokmark.si)**.
 
 Grokmark is an open-source Chrome extension (Manifest V3). While you are on x.com it scores your new X bookmarks with Cloudflare's **Clef-flash** decision model, decides in plain code whether each one is a very important post, a VIP, and sends only the VIPs to your **Grok Bot** routine webhook (a Slack incoming webhook works too). No X developer app, no server, no X API bill. Nothing leaves your machine except the scoring call to Cloudflare and the VIPs you send to your own routine.
 
