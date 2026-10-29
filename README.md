@@ -50,6 +50,7 @@ Open the **Advanced** fold on the setup page for:
 - [Tuning](docs/tuning.md): fix a wrong verdict, from a missing name to your own VIP List.
 - [The Grok Bot routine](docs/grok-bot-routine.md): what arrives and a prompt to paste in.
 - [Troubleshooting](docs/troubleshooting.md): every message Grokmark shows, and what to do.
+- [FAQ](docs/faq.md): how the x.com session and the X API work together.
 - [Privacy and security](docs/privacy-and-security.md): what leaves your computer and where keys live.
 - [Permissions](docs/permissions.md): what the extension is allowed to do and reach, and how to verify a release.
 
