@@ -13,7 +13,7 @@ Nothing is sent to Grokmark's authors or anyone else. Posts that are not VIPs le
 
 ## How bookmarks are read
 
-Grokmark reads bookmarks using the same web request X's own site makes, inside your logged-in tab. It does not use an X developer account or ask for your X password. This may conflict with X's terms of service; it is your call.
+Grokmark reads bookmarks using the same web request X's own site makes, inside your logged-in tab. It does not use an X developer account or ask for your X password. That isn't an official X API, so X could change or limit it. An optional mode that uses your own X developer app is coming next.
 
 ## Where your keys live
 
