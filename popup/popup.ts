@@ -1,13 +1,23 @@
 import { shouldRun } from "../src/gate";
 import type { RunResponse } from "../src/messages";
+import { xConnected } from "../src/source";
 import { get, getSettings } from "../src/storage";
 
 const $ = (id: string) => document.getElementById(id)!;
 
 async function render() {
-  const [settings, state, runs, queue] = await Promise.all([getSettings(), get("state"), get("runs"), get("queue")]);
-  const gate = shouldRun(settings, state, new Date());
-  $("status").textContent = gate.run ? "Doors are open. Next visit to x.com checks." : gate.why;
+  const [settings, state, runs, queue, auth, problem] = await Promise.all([
+    getSettings(),
+    get("state"),
+    get("runs"),
+    get("queue"),
+    get("xApiAuth"),
+    get("xApiProblem"),
+  ]);
+  const connected = xConnected(settings, auth);
+  const gate = shouldRun(settings, state, new Date(), false, { connected, problem });
+  const open = connected ? "Doors are open. The next check reads your bookmarks through the X API." : "Doors are open. Next visit to x.com checks.";
+  $("status").textContent = gate.run ? open : gate.why;
 
   const last = runs[runs.length - 1];
   const rows: [string, string][] = [

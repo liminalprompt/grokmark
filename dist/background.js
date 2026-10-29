@@ -143,11 +143,20 @@
     return out;
   }
 
+  // src/messages.ts
+  var XAuthError = class extends Error {
+  };
+  var X_EXPIRED = "X API sign-in expired \u2014 click Connect X again";
+  var X_NOT_CONNECTED = "API only is on, but X isn't connected. Open setup, then Advanced, and click Connect X";
+  var LEARNED_KEY = "xBookmarksRequest";
+  var NEEDS_BOOKMARKS_PAGE = "Grokmark hasn't seen X load your bookmarks yet. Open x.com/i/bookmarks once in this tab, then try again";
+
   // src/gate.ts
   var HOUR = 36e5;
-  function shouldRun(settings, state, now, force = false) {
+  function shouldRun(settings, state, now, force = false, xApi = { connected: false }) {
     if (!settings.accountId || !settings.token) return { run: false, why: "Add your Cloudflare account ID and token" };
     if (!settings.vipList) return { run: false, why: "Finish setup: write one sentence about yourself" };
+    if (settings.xApiOnly && !xApi.connected) return { run: false, why: xApi.problem || X_NOT_CONNECTED };
     if (force) return { run: true };
     const [h, m] = settings.doorPolicy.opening_time.split(":").map(Number);
     const minutes = now.getHours() * 60 + now.getMinutes();
@@ -157,9 +166,23 @@
     return { run: true };
   }
 
-  // src/messages.ts
-  var LEARNED_KEY = "xBookmarksRequest";
-  var NEEDS_BOOKMARKS_PAGE = "Grokmark hasn't seen X load your bookmarks yet. Open x.com/i/bookmarks once in this tab, then try again";
+  // src/source.ts
+  var xConnected = (s, auth) => !!auth && !!s.xClientId.trim();
+  function chooseSource(s, auth, problem = "") {
+    if (xConnected(s, auth)) return { use: "api", apiOnly: s.xApiOnly };
+    if (s.xApiOnly) return { use: "blocked", why: problem || X_NOT_CONNECTED };
+    return { use: "session" };
+  }
+  async function readBookmarks(source, readers) {
+    if (source.use === "blocked") throw new Error(source.why);
+    if (source.use === "session") return readers.session();
+    try {
+      return await readers.api();
+    } catch (e) {
+      if (e instanceof XAuthError && !source.apiOnly) return readers.session();
+      throw e;
+    }
+  }
 
   // src/schema.ts
   var DEFAULT_DOOR_POLICY = {
@@ -465,9 +488,13 @@
     themeRoutes: {},
     vipList: null,
     doorPolicy: DEFAULT_DOOR_POLICY,
-    labels: []
+    labels: [],
+    xClientId: "",
+    xApiOnly: false
   };
   var FALLBACK = {
+    xApiAuth: null,
+    xApiProblem: "",
     settings: DEFAULT_SETTINGS,
     seen: [],
     queue: [],
@@ -564,6 +591,218 @@
     return { sent, remaining, errors };
   }
 
+  // src/xApi.ts
+  var AUTHORIZE_URL = "https://x.com/i/oauth2/authorize";
+  var TOKEN_URL = "https://api.x.com/2/oauth2/token";
+  var API = "https://api.x.com/2";
+  var SCOPES = "tweet.read users.read bookmark.read offline.access";
+  var SKEW_MS = 6e4;
+  var PAGE_SIZE = 20;
+  function base64url(bytes) {
+    let bin = "";
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function randomString(byteLength) {
+    return base64url(crypto.getRandomValues(new Uint8Array(byteLength)));
+  }
+  var newCodeVerifier = () => randomString(32);
+  var newState = () => randomString(16);
+  async function codeChallenge(verifier) {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+    return base64url(new Uint8Array(digest));
+  }
+  function buildAuthorizeUrl(p) {
+    const q = new URLSearchParams({
+      response_type: "code",
+      client_id: p.clientId,
+      redirect_uri: p.redirectUri,
+      scope: SCOPES,
+      state: p.state,
+      code_challenge: p.challenge,
+      code_challenge_method: "S256"
+    });
+    return `${AUTHORIZE_URL}?${q}`;
+  }
+  function parseRedirect(redirectUrl, expectedState) {
+    const q = new URL(redirectUrl).searchParams;
+    if (q.get("state") !== expectedState) throw new Error("X sign-in was rejected: the response did not match this request (state)");
+    const err = q.get("error");
+    if (err) throw new Error(`X sign-in failed: ${q.get("error_description") ?? err}`);
+    const code = q.get("code");
+    if (!code) throw new Error("X sign-in failed: no code came back");
+    return code;
+  }
+  async function postToken(form, secrets) {
+    const res = await fetch(TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(form).toString()
+    });
+    let body = {};
+    try {
+      body = await res.json();
+    } catch {
+    }
+    if (!res.ok || !body.access_token) {
+      const why = body.error_description ?? body.error ?? "no access token returned";
+      return { ok: false, status: res.status, message: redact(`HTTP ${res.status}: ${why}`.slice(0, 200), secrets) };
+    }
+    return { ok: true, body };
+  }
+  function toAuth(body, previous, now = Date.now()) {
+    return {
+      ...previous,
+      accessToken: body.access_token,
+      refreshToken: body.refresh_token ?? previous?.refreshToken ?? "",
+      expiresAt: now + (body.expires_in ?? 7200) * 1e3
+    };
+  }
+  async function exchangeCode(clientId, code, verifier, redirectUri, now = Date.now()) {
+    const r = await postToken(
+      { grant_type: "authorization_code", code, redirect_uri: redirectUri, code_verifier: verifier, client_id: clientId },
+      [code, verifier]
+    );
+    if (!r.ok) throw new Error(`X token exchange failed (${r.message})`);
+    return toAuth(r.body, void 0, now);
+  }
+  var refreshing = null;
+  async function recordProblem(message, forgetTokens) {
+    await set("xApiProblem", message);
+    if (forgetTokens) await set("xApiAuth", null);
+  }
+  async function doRefresh(clientId, auth, now) {
+    let r;
+    try {
+      r = await postToken({ grant_type: "refresh_token", refresh_token: auth.refreshToken, client_id: clientId }, [auth.refreshToken, auth.accessToken]);
+    } catch {
+      await recordProblem("X API sign-in could not be refreshed (no network?). Grokmark will try again", false);
+      throw new XAuthError("Couldn't refresh the X API sign-in (network error)");
+    }
+    if (!r.ok) {
+      const definitive = r.status === 400 || r.status === 401;
+      await recordProblem(definitive ? X_EXPIRED : `X API sign-in could not be refreshed (${r.message}). Grokmark will try again`, definitive);
+      throw new XAuthError(definitive ? X_EXPIRED : `Couldn't refresh the X API sign-in (${r.message})`);
+    }
+    const next = toAuth(r.body, auth, now);
+    await set("xApiAuth", next);
+    await set("xApiProblem", "");
+    return next;
+  }
+  async function validAuth(clientId, force = false, now = Date.now()) {
+    const auth = await get("xApiAuth");
+    if (!auth) throw new XAuthError(X_EXPIRED);
+    if (!force && auth.expiresAt - SKEW_MS > now) return auth;
+    refreshing ??= doRefresh(clientId, auth, now).finally(() => refreshing = null);
+    return refreshing;
+  }
+  function describeFailure(status, body) {
+    const detail = (body?.detail ?? body?.title ?? "").toString().slice(0, 160);
+    const hint = status === 429 ? "rate limited, wait a few minutes" : status === 402 ? "your X developer account is out of credits" : status === 403 ? "X refused access: check the app's permissions and plan" : "";
+    return `X API HTTP ${status}${hint ? ` (${hint})` : ""}${detail ? `: ${detail}` : ""}`;
+  }
+  async function apiGet(clientId, path, params = {}) {
+    const url = `${API}${path}?${new URLSearchParams(params)}`;
+    for (let attempt = 0; ; attempt++) {
+      const auth = await validAuth(clientId, attempt > 0);
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${auth.accessToken}` } });
+      if (res.status === 401) {
+        if (attempt === 0) continue;
+        await recordProblem(X_EXPIRED, true);
+        throw new XAuthError(X_EXPIRED);
+      }
+      let body = {};
+      try {
+        body = await res.json();
+      } catch {
+      }
+      if (!res.ok) throw new Error(redact(describeFailure(res.status, body), [auth.accessToken, auth.refreshToken]));
+      return body;
+    }
+  }
+  async function connectX(clientId) {
+    const redirectUri = chrome.identity.getRedirectURL();
+    const verifier = newCodeVerifier();
+    const state = newState();
+    const url = buildAuthorizeUrl({ clientId, redirectUri, state, challenge: await codeChallenge(verifier) });
+    const back = await chrome.identity.launchWebAuthFlow({ url, interactive: true });
+    if (!back) throw new Error("X sign-in was cancelled");
+    const auth = await exchangeCode(clientId, parseRedirect(back, state), verifier, redirectUri);
+    await set("xApiAuth", auth);
+    await set("xApiProblem", "");
+    try {
+      const me = (await apiGet(clientId, "/users/me")).data;
+      const known = { ...auth, userId: me?.id, handle: me?.username };
+      await set("xApiAuth", known);
+      return known;
+    } catch (e) {
+      if (e instanceof XAuthError) throw e;
+      return auth;
+    }
+  }
+  async function disconnectX() {
+    await set("xApiAuth", null);
+    await set("xApiProblem", "");
+  }
+  function dateFromId(id) {
+    try {
+      return new Date(Number((BigInt(id) >> 22n) + 1288834974657n)).toISOString();
+    } catch {
+      return (/* @__PURE__ */ new Date(0)).toISOString();
+    }
+  }
+  function v2ToBookmark(t, includes = {}) {
+    if (!t?.id) return null;
+    const user = includes.users?.find((u) => u.id === t.author_id);
+    const handle = user?.username ?? "i";
+    const quotedId = t.referenced_tweets?.find((r) => r.type === "quoted")?.id;
+    const quoted = quotedId ? includes.tweets?.find((q) => q.id === quotedId) : void 0;
+    const keys = t.attachments?.media_keys ?? [];
+    const media = includes.media ?? [];
+    const created = t.created_at ? new Date(t.created_at) : null;
+    return {
+      id: t.id,
+      url: `https://x.com/${handle}/status/${t.id}`,
+      authorHandle: handle,
+      authorName: user?.name ?? handle,
+      text: t.note_tweet?.text ?? t.text ?? "",
+      createdAt: created && !isNaN(created.getTime()) ? created.toISOString() : dateFromId(t.id),
+      imageUrls: keys.map((k) => media.find((m) => m.media_key === k)).filter((m) => m?.type === "photo" && typeof m.url === "string").map((m) => m.url).slice(0, 4),
+      quotedText: quoted ? quoted.note_tweet?.text ?? quoted.text : void 0
+    };
+  }
+  function parseBookmarksPage(json) {
+    const bookmarks = (json?.data ?? []).map((t) => v2ToBookmark(t, json.includes)).filter((b) => !!b);
+    return { bookmarks, next: json?.meta?.next_token ?? null };
+  }
+  async function fetchXApiBookmarks(clientId, seen, maxPages = 3, limit = Infinity) {
+    let auth = await validAuth(clientId);
+    if (!auth.userId) {
+      const me = (await apiGet(clientId, "/users/me")).data;
+      if (!me?.id) throw new Error("X API did not say who you are (users/me)");
+      auth = { ...await get("xApiAuth") ?? auth, userId: me.id, handle: me.username };
+      await set("xApiAuth", auth);
+    }
+    const out = [];
+    let token = null;
+    for (let page = 0; page < maxPages; page++) {
+      const params = {
+        max_results: String(Math.max(1, Math.min(PAGE_SIZE, limit))),
+        expansions: "author_id,attachments.media_keys,referenced_tweets.id",
+        "tweet.fields": "note_tweet,created_at,text,attachments,referenced_tweets,author_id",
+        "media.fields": "url,type",
+        "user.fields": "username,name"
+      };
+      if (token) params.pagination_token = token;
+      const { bookmarks, next } = parseBookmarksPage(await apiGet(clientId, `/users/${auth.userId}/bookmarks`, params));
+      const fresh = bookmarks.filter((b) => !seen.has(b.id));
+      out.push(...fresh);
+      if (out.length >= limit || fresh.length < bookmarks.length || !next || next === token) break;
+      token = next;
+    }
+    return out.slice(0, limit);
+  }
+
   // src/background.ts
   var ALARM = "grokmark-check";
   var MAX_PAGES = 3;
@@ -577,9 +816,19 @@
     if (msg?.type === "userHere") void runCheck(false);
     else if (msg?.type === "runNow") runCheck(true).then(sendResponse);
     else if (msg?.type === "testLast10") testLast10().then(sendResponse);
+    else if (msg?.type === "xConnect") xConnect(msg.clientId).then(sendResponse);
+    else if (msg?.type === "xDisconnect") disconnectX().then(() => sendResponse({ ok: true }));
     else return;
     return true;
   });
+  async function xConnect(clientId) {
+    try {
+      const auth = await connectX(clientId.trim());
+      return { ok: true, handle: auth.handle };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  }
   async function xTabId() {
     const tabs = await chrome.tabs.query({ url: "https://x.com/*" });
     return tabs.find((t) => t.id != null)?.id ?? null;
@@ -616,17 +865,25 @@
     if (!res?.ok) throw new Error(res?.error ?? "No answer from the x.com tab (reload it)");
     return res.bookmarks;
   }
+  async function readBookmarks2(settings, seen, maxPages, limit) {
+    const source = chooseSource(settings, await get("xApiAuth"), await get("xApiProblem"));
+    return readBookmarks(source, {
+      api: () => fetchXApiBookmarks(settings.xClientId.trim(), new Set(seen), maxPages, limit),
+      session: () => fetchViaTab(seen, maxPages, limit)
+    });
+  }
   async function runCheck(force) {
     const settings = await getSettings();
     const state = await get("state");
-    const gate = shouldRun(settings, state, /* @__PURE__ */ new Date(), force);
+    const xApi = { connected: xConnected(settings, await get("xApiAuth")), problem: await get("xApiProblem") };
+    const gate = shouldRun(settings, state, /* @__PURE__ */ new Date(), force, xApi);
     if (!gate.run) return { ok: false, message: gate.why };
     if (!await acquireLock()) return { ok: false, message: "A check is already running" };
     const log = { startedAt: Date.now(), fetched: 0, scored: 0, vip: 0, keep: 0, archive: 0, sent: 0, errors: [] };
     try {
       const list = settings.vipList;
       let seen = await get("seen");
-      const bookmarks = await fetchViaTab(seen.map(([id]) => id), MAX_PAGES);
+      const bookmarks = await readBookmarks2(settings, seen.map(([id]) => id), MAX_PAGES);
       log.fetched = bookmarks.length;
       const auth = { accountId: settings.accountId, token: settings.token };
       const results = await pool(bookmarks, CONCURRENCY, async (b) => {
@@ -684,7 +941,7 @@
     if (!settings.accountId || !settings.token || !settings.vipList)
       return { ok: false, error: "Add your Cloudflare credentials and a valid VIP List first" };
     try {
-      const bookmarks = await fetchViaTab([], 1, 10);
+      const bookmarks = await readBookmarks2(settings, [], 1, 10);
       const list = { ...settings.vipList, door_policy: settings.doorPolicy };
       const auth = { accountId: settings.accountId, token: settings.token };
       const results = await pool(bookmarks, CONCURRENCY, async (b) => decide(list, await scoreBookmark(auth, list, b)));

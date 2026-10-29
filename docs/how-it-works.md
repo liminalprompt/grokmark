@@ -8,7 +8,7 @@ Most of what you bookmark on X you never return to. A few posts deserve action: 
 
 ## The pieces
 
-- Your bookmarks. Grokmark reads them through the same request X's own website uses, inside your logged-in browser. There is no X developer account, no API key and no server. This is also why it needs an x.com tab open. It reads the All Bookmarks list, so a post filed in a bookmark folder is still seen and scored; folders themselves are ignored.
+- Your bookmarks. Grokmark reads them through the same request X's own website uses, inside your logged-in browser. By default there is no X developer account, no API key and no server, which is also why it needs an x.com tab open. Advanced has an optional official X API mode that uses your own X developer app instead, needs no tab, and is billed by X to your developer account. It reads the All Bookmarks list, so a post filed in a bookmark folder is still seen and scored; folders themselves are ignored.
 - The VIP List. A set of questions about each post. Grokmark ships with a stock list. Your sentence and your names are added to it. Advanced users can write their own.
 - The bouncer. Cloudflare's Clef-flash model. It answers each question with a probability. It never writes text and never looks anything up; it sees only the post, its images, the author's handle and your sentence.
 - The decision. Plain code turns the probabilities into one of three verdicts.
@@ -41,7 +41,7 @@ Each send is one request to the routine's webhook. It carries the post links, th
 
 ## When it runs
 
-A check starts only when all of these are true: setup is complete, it is past the opening time, the last successful check was more than the cooldown ago (four hours by default), and no check is already running. Grokmark notices when you visit x.com and also re-checks every thirty minutes while Chrome is open. **Run now** ignores the time and cooldown.
+A check starts only when all of these are true: setup is complete, it is past the opening time, the last successful check was more than the cooldown ago (four hours by default), and no check is already running. Grokmark notices when you visit x.com (session mode) and also re-checks every thirty minutes while Chrome is open. **Run now** ignores the time and cooldown.
 
 ## Cost
 

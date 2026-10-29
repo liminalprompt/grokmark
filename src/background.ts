@@ -1,8 +1,18 @@
 import { decide, type Verdict } from "./decide";
 import { pool, scoreBookmark } from "./clef";
 import { shouldRun } from "./gate";
-import { LEARNED_KEY, NEEDS_BOOKMARKS_PAGE, type FetchResponse, type RunResponse, type TestResponse, type TestRow } from "./messages";
+import {
+  LEARNED_KEY,
+  NEEDS_BOOKMARKS_PAGE,
+  type FetchResponse,
+  type RunResponse,
+  type TestResponse,
+  type TestRow,
+  type XConnect,
+  type XResponse,
+} from "./messages";
 import type { Bookmark } from "./schema";
+import { chooseSource, readBookmarks as readFromSource, xConnected } from "./source";
 import {
   acquireLock,
   addSeen,
@@ -14,8 +24,10 @@ import {
   type QueueItem,
   type RunLog,
   type Seen,
+  type Settings,
 } from "./storage";
 import { flushQueue, shouldFlush } from "./webhook";
+import { connectX, disconnectX, fetchXApiBookmarks } from "./xApi";
 
 const ALARM = "grokmark-check";
 const MAX_PAGES = 3;
@@ -31,9 +43,20 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "userHere") void runCheck(false);
   else if (msg?.type === "runNow") runCheck(true).then(sendResponse);
   else if (msg?.type === "testLast10") testLast10().then(sendResponse);
+  else if (msg?.type === "xConnect") xConnect((msg as XConnect).clientId).then(sendResponse);
+  else if (msg?.type === "xDisconnect") disconnectX().then(() => sendResponse({ ok: true }));
   else return;
   return true;
 });
+
+async function xConnect(clientId: string): Promise<XResponse> {
+  try {
+    const auth = await connectX(clientId.trim());
+    return { ok: true, handle: auth.handle };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
 
 async function xTabId(): Promise<number | null> {
   const tabs = await chrome.tabs.query({ url: "https://x.com/*" });
@@ -80,10 +103,20 @@ async function fetchViaTab(seen: string[], maxPages: number, limit?: number): Pr
   return res.bookmarks;
 }
 
+/** X API (no tab needed) or the x.com session, per setup. See source.ts for when each applies. */
+async function readBookmarks(settings: Settings, seen: string[], maxPages: number, limit?: number): Promise<Bookmark[]> {
+  const source = chooseSource(settings, await get("xApiAuth"), await get("xApiProblem"));
+  return readFromSource(source, {
+    api: () => fetchXApiBookmarks(settings.xClientId.trim(), new Set(seen), maxPages, limit),
+    session: () => fetchViaTab(seen, maxPages, limit),
+  });
+}
+
 async function runCheck(force: boolean): Promise<RunResponse> {
   const settings = await getSettings();
   const state = await get("state");
-  const gate = shouldRun(settings, state, new Date(), force);
+  const xApi = { connected: xConnected(settings, await get("xApiAuth")), problem: await get("xApiProblem") };
+  const gate = shouldRun(settings, state, new Date(), force, xApi);
   if (!gate.run) return { ok: false, message: gate.why };
   if (!(await acquireLock())) return { ok: false, message: "A check is already running" };
 
@@ -91,7 +124,7 @@ async function runCheck(force: boolean): Promise<RunResponse> {
   try {
     const list = settings.vipList!;
     let seen = await get("seen");
-    const bookmarks = await fetchViaTab(seen.map(([id]) => id), MAX_PAGES);
+    const bookmarks = await readBookmarks(settings, seen.map(([id]) => id), MAX_PAGES);
     log.fetched = bookmarks.length;
 
     const auth = { accountId: settings.accountId, token: settings.token };
@@ -157,7 +190,7 @@ async function testLast10(): Promise<TestResponse> {
   if (!settings.accountId || !settings.token || !settings.vipList)
     return { ok: false, error: "Add your Cloudflare credentials and a valid VIP List first" };
   try {
-    const bookmarks = await fetchViaTab([], 1, 10);
+    const bookmarks = await readBookmarks(settings, [], 1, 10);
     const list = { ...settings.vipList, door_policy: settings.doorPolicy };
     const auth = { accountId: settings.accountId, token: settings.token };
     const results = await pool(bookmarks, CONCURRENCY, async (b) => decide(list, await scoreBookmark(auth, list, b)));

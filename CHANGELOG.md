@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 · 2026-10-29
+
+- Optional official X API mode under Setup > Advanced: bring your own X developer app (OAuth 2.0 with PKCE), connect once, and Grokmark reads bookmarks through the API with no x.com tab open. The x.com session path is still the default and is unchanged.
+- "API only" switch: never fall back to the x.com session. Without it, a lost X sign-in falls back to the session for that run.
+- **New permissions:** `identity` (for the X sign-in window) and the host `https://api.x.com/*`. Chrome may ask you to accept them when the extension updates.
+- The network test pins both additions.
+
 ## 0.2.9 · 2026-10-29
 
 - The stock theme built from your names is called "Names I follow" (was "Things I follow").

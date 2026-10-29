@@ -17,6 +17,20 @@ export type Settings = {
   vipList: VipList | null;
   doorPolicy: DoorPolicy;
   labels: Label[];
+  /** Advanced: the user's own X developer app, for the optional official X API mode. Empty = session path only. */
+  xClientId: string;
+  /** Advanced: with the X API connected, never fall back to the logged-in x.com session. */
+  xApiOnly: boolean;
+};
+
+/** OAuth tokens for the official X API. Kept under their own key so saving settings never touches them. */
+export type XAuth = {
+  accessToken: string;
+  refreshToken: string;
+  /** epoch ms */
+  expiresAt: number;
+  userId?: string;
+  handle?: string;
 };
 
 export type SeenEntry = { verdict: "vip" | "keep" | "archive"; reason?: string; at: number };
@@ -60,9 +74,14 @@ export const DEFAULT_SETTINGS: Settings = {
   vipList: null,
   doorPolicy: DEFAULT_DOOR_POLICY,
   labels: [],
+  xClientId: "",
+  xApiOnly: false,
 };
 
 type Keys = {
+  xApiAuth: XAuth | null;
+  /** Why the X API needs the user's attention (e.g. sign-in expired); empty when fine. */
+  xApiProblem: string;
   settings: Settings;
   seen: Seen;
   queue: QueueItem[];
@@ -72,6 +91,8 @@ type Keys = {
 };
 
 const FALLBACK: Keys = {
+  xApiAuth: null,
+  xApiProblem: "",
   settings: DEFAULT_SETTINGS,
   seen: [],
   queue: [],

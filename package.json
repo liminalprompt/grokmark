@@ -1,6 +1,6 @@
 {
   "name": "grokmark",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Only your best bookmarks get seen. Chrome extension that scores X bookmarks with Clef-flash and forwards VIPs to Grok Bot.",

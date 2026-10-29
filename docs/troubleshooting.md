@@ -4,7 +4,7 @@ Messages Grokmark shows, what they mean, and what to do. Most problems are one o
 
 ## "Open x.com in a tab so Grokmark can read your bookmarks"
 
-Grokmark reads bookmarks through your logged-in x.com tab. Open x.com in any tab, make sure you are logged in, and try again.
+Grokmark reads bookmarks through your logged-in x.com tab (unless the optional X API is connected, which needs no tab). Open x.com in any tab, make sure you are logged in, and try again.
 
 ## "Couldn't reach your x.com tab. Reload it and try again"
 
@@ -13,6 +13,26 @@ The x.com tab was open before Grokmark was installed or reloaded, so Grokmark's 
 ## "Grokmark hasn't seen X load your bookmarks yet. Open x.com/i/bookmarks once in this tab, then try again"
 
 Grokmark learns how X asks for bookmarks by watching X do it once. Normally it opens the bookmarks page in a background tab by itself for a moment. If that did not work, open `x.com/i/bookmarks` yourself, let it load, then try again.
+
+## "X API sign-in expired — click Connect X again"
+
+Only in the optional X API mode. X refused to renew the sign-in (you revoked the app, changed your password, or the refresh token expired). Open Advanced and click **Connect X** again. Until you do, a run uses your x.com session instead, unless **API only** is on, in which case it stops with this message.
+
+## "API only is on, but X isn't connected"
+
+**API only** is ticked but there is no X sign-in. Open Advanced, paste your app's Client ID, and click **Connect X**, or untick API only to use your x.com session.
+
+## "X sign-in failed", "X sign-in was cancelled" or "X sign-in was rejected"
+
+The X window was closed or X refused. If it says the redirect URL is not valid, the callback URL on your app at developer.x.com must be exactly the one shown under Advanced. "Rejected … (state)" means the answer did not match the request; try again. "X token exchange failed" with 400 usually means the Client ID is wrong or the app is not set up as an OAuth 2.0 public client.
+
+## "X API HTTP 429", "HTTP 402" or "HTTP 403"
+
+Only in the optional X API mode. 429: X is rate limiting you; wait a few minutes. 402: your X developer account is out of credits or has no API access plan. 403: X refused the request; check the app's permissions (read) and plan. Grokmark does not fall back to your x.com session for these.
+
+## "Couldn't refresh the X API sign-in"
+
+X could not be reached to renew the sign-in, or answered with a server error. Your sign-in is kept and Grokmark tries again on the next check.
 
 ## "That looks like an API token, not the account ID"
 
