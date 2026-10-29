@@ -21,3 +21,7 @@ Turn on **API only** in this setup. With no x.com session in that browser there 
 ## Is X API mode ready?
 
 It is in beta, and **Connect X** is marked "(beta)". The sign-in, token refresh and bookmark reading are covered by automated tests against a simulated X, but they haven't been fully tested against the live X API yet. The x.com session method is unchanged and stays the default. If something goes wrong, click **Disconnect** to go back to it, and please [open an issue](https://github.com/liminalprompt/grokmark/issues).
+
+## Want to help test it with a real X developer app?
+
+Please do. If you have an X developer app and can try **Connect X (beta)** against the live API, [open an issue](https://github.com/liminalprompt/grokmark/issues) or message [@liminalprompt](https://x.com/liminalprompt) on X with what worked and what didn't.
