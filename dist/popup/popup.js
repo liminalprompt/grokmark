@@ -1,10 +1,14 @@
 "use strict";
 (() => {
+  // src/messages.ts
+  var X_NOT_CONNECTED = "API only is on, but X isn't connected. Open setup, then Advanced, and click Connect X";
+
   // src/gate.ts
   var HOUR = 36e5;
-  function shouldRun(settings, state, now, force = false) {
+  function shouldRun(settings, state, now, force = false, xApi = { connected: false }) {
     if (!settings.accountId || !settings.token) return { run: false, why: "Add your Cloudflare account ID and token" };
     if (!settings.vipList) return { run: false, why: "Finish setup: write one sentence about yourself" };
+    if (settings.xApiOnly && !xApi.connected) return { run: false, why: xApi.problem || X_NOT_CONNECTED };
     if (force) return { run: true };
     const [h, m] = settings.doorPolicy.opening_time.split(":").map(Number);
     const minutes = now.getHours() * 60 + now.getMinutes();
@@ -13,6 +17,9 @@
     if (state.lastSuccess && now.getTime() - state.lastSuccess < cooldown) return { run: false, why: "Cooling down" };
     return { run: true };
   }
+
+  // src/source.ts
+  var xConnected = (s, auth) => !!auth && !!s.xClientId.trim();
 
   // src/schema.ts
   var DEFAULT_DOOR_POLICY = {
@@ -316,9 +323,13 @@
     themeRoutes: {},
     vipList: null,
     doorPolicy: DEFAULT_DOOR_POLICY,
-    labels: []
+    labels: [],
+    xClientId: "",
+    xApiOnly: false
   };
   var FALLBACK = {
+    xApiAuth: null,
+    xApiProblem: "",
     settings: DEFAULT_SETTINGS,
     seen: [],
     queue: [],
@@ -338,9 +349,18 @@
   // popup/popup.ts
   var $ = (id) => document.getElementById(id);
   async function render() {
-    const [settings, state, runs, queue] = await Promise.all([getSettings(), get("state"), get("runs"), get("queue")]);
-    const gate = shouldRun(settings, state, /* @__PURE__ */ new Date());
-    $("status").textContent = gate.run ? "Doors are open. Next visit to x.com checks." : gate.why;
+    const [settings, state, runs, queue, auth, problem] = await Promise.all([
+      getSettings(),
+      get("state"),
+      get("runs"),
+      get("queue"),
+      get("xApiAuth"),
+      get("xApiProblem")
+    ]);
+    const connected = xConnected(settings, auth);
+    const gate = shouldRun(settings, state, /* @__PURE__ */ new Date(), false, { connected, problem });
+    const open = connected ? "Doors are open. The next check reads your bookmarks through the X API." : "Doors are open. Next visit to x.com checks.";
+    $("status").textContent = gate.run ? open : gate.why;
     const last = runs[runs.length - 1];
     const rows = [
       ["Last run", last ? new Date(last.startedAt).toLocaleString() : "never"],

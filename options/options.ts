@@ -1,8 +1,9 @@
 import { BASIC_ROUTE, effectiveVipList, isStockShaped, splitNames, type EffectiveList } from "../src/effectiveList";
-import type { TestResponse } from "../src/messages";
+import type { TestResponse, XResponse } from "../src/messages";
 import { VIP_LIST_PROMPT, buildTuningPrompt } from "../src/prompt";
 import { DEFAULT_DOOR_POLICY, addLabel, checkAccountId, type Bookmark, type Label } from "../src/schema";
-import { getSettings, set, type QueueItem, type Route } from "../src/storage";
+import { describeXStatus } from "../src/source";
+import { get, getSettings, set, type QueueItem, type Route } from "../src/storage";
 import { flushQueue } from "../src/webhook";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -171,9 +172,46 @@ async function ping() {
   out.textContent = msg;
 }
 
+/** Show whether the X API is signed in. `extra` is a message from a connect attempt that just failed. */
+async function renderXStatus(extra?: string) {
+  const s = await getSettings();
+  const st = describeXStatus({ xClientId: input("xClientId").value || s.xClientId }, await get("xApiAuth"), await get("xApiProblem"));
+  const out = $("xStatus");
+  out.className = st.ok ? "ok" : "err";
+  out.textContent = extra ? `${st.text}. ${extra}` : st.text;
+}
+
+/** Keep the Client ID and API-only choice without waiting for the full Save, which needs the rest of setup. */
+async function saveXSettings() {
+  await set("settings", { ...(await getSettings()), xClientId: input("xClientId").value.trim(), xApiOnly: input("xApiOnly").checked });
+}
+
+async function connectX() {
+  const clientId = input("xClientId").value.trim();
+  if (!clientId) {
+    await renderXStatus("Paste your X app's Client ID first");
+    return;
+  }
+  $("xStatus").className = "";
+  $("xStatus").textContent = "Waiting for X…";
+  await saveXSettings();
+  const res: XResponse = await chrome.runtime.sendMessage({ type: "xConnect", clientId });
+  await renderXStatus(res.ok ? undefined : res.error);
+}
+
+async function disconnectX() {
+  await chrome.runtime.sendMessage({ type: "xDisconnect" });
+  await renderXStatus();
+}
+
 async function load() {
   const s = await getSettings();
   $("version").textContent = `v${chrome.runtime.getManifest().version}`;
+  input("xClientId").value = s.xClientId;
+  input("xApiOnly").checked = s.xApiOnly;
+  $("xRedirect").textContent = chrome.identity.getRedirectURL();
+  if (s.xClientId || s.xApiOnly) $<HTMLDetailsElement>("advanced").open = true;
+  await renderXStatus();
   input("accountId").value = s.accountId;
   input("token").value = s.token;
   area("ownerSummary").value = s.ownerSummary;
@@ -239,7 +277,10 @@ async function save(): Promise<boolean> {
       cooldown_hours: Number(input("cooldown_hours").value),
     },
     labels,
+    xClientId: input("xClientId").value.trim(),
+    xApiOnly: input("xApiOnly").checked,
   });
+  void renderXStatus();
   status.className = eff.list ? "ok" : "err";
   status.textContent = eff.list ? "Saved" : `Saved, but Grokmark won't run yet: ${eff.problem}`;
   return !!eff.list;
@@ -365,6 +406,9 @@ $("save").addEventListener("click", () => void save());
 $("test").addEventListener("click", test);
 $("addRoute").addEventListener("click", addRoute);
 $("ping").addEventListener("click", ping);
+$("xConnect").addEventListener("click", () => void connectX());
+$("xDisconnect").addEventListener("click", () => void disconnectX());
+$("xApiOnly").addEventListener("change", () => void saveXSettings());
 $("copyPrompt").addEventListener("click", async () => {
   await navigator.clipboard.writeText(VIP_LIST_PROMPT);
   $("copyPrompt").textContent = "Copied";

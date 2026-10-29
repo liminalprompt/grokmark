@@ -48,6 +48,17 @@ If you agree with the verdicts, click **Send these VIPs to the webhook now**. Th
 
 If you disagree with a verdict, use the **Disagree?** column. [Tuning](tuning.md) explains what happens next.
 
+## Optional: official X API
+
+By default Grokmark reads your bookmarks through your logged-in x.com tab. If you would rather use X's official API, open **Advanced** on the setup page and use **Use the official X API**. You need your own X developer app, and X bills API reads to that developer account.
+
+1. At developer.x.com, create a project and an app. In the app's user authentication settings, choose **OAuth 2.0**, set the app type to a **public client** (native app or single page app, so there is no client secret), and give it read permissions.
+2. Add the redirect URL shown on the setup page (it looks like `https://<extension id>.chromiumapp.org/`) as a callback URL. It must match exactly.
+3. Copy the app's **Client ID** (not the client secret or bearer token) into Grokmark and click **Connect X**. A window from x.com asks you to approve read access to your posts, profile and bookmarks. The status line then reads "Connected as @yourhandle".
+4. Optional: tick **API only** if Grokmark must never use your x.com session. Without it, if your X sign-in expires, that run falls back to the session.
+
+Once connected, Grokmark needs no x.com tab, and **Test on last 10 bookmarks** works without one. To go back, click **Disconnect**. Each check reads up to three pages of 20 bookmarks and stops at the first page that contains a bookmark it has already seen, to keep the number of billed reads low.
+
 ## After setup
 
-Close the page. From now on, whenever you are on x.com after the opening time (9 pm by default), Grokmark checks for new bookmarks, scores them, and queues the VIPs. They are sent when five have collected or one has waited a day. The popup, under the Grokmark icon, shows the last run and lets you click **Run now** to check and send immediately.
+Close the page. From now on, whenever you are on x.com after the opening time (9 pm by default), or on the half hour while Chrome is open if the X API is connected, Grokmark checks for new bookmarks, scores them, and queues the VIPs. They are sent when five have collected or one has waited a day. The popup, under the Grokmark icon, shows the last run and lets you click **Run now** to check and send immediately.

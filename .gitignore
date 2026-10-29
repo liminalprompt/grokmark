@@ -5,3 +5,5 @@ node_modules/
 HANDOFF.md
 VIP-LIST-*.json
 grokmark-*.zip
+.env
+.env.*

@@ -1,14 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Grokmark",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "description": "Only your best bookmarks get seen. Scores your X bookmarks against your VIP List and sends the VIPs to Grok Bot.",
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "identity"
   ],
   "host_permissions": [
     "https://x.com/*",
+    "https://api.x.com/*",
     "https://api.cloudflare.com/*"
   ],
   "optional_host_permissions": [

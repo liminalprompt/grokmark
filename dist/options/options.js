@@ -404,6 +404,14 @@ ${vipListJson.trim()}
 ${WRITING_RULES}`;
   }
 
+  // src/source.ts
+  var xConnected = (s, auth) => !!auth && !!s.xClientId.trim();
+  function describeXStatus(s, auth, problem) {
+    if (problem) return { text: `Needs reconnect: ${problem}`, ok: false };
+    if (xConnected(s, auth)) return { text: auth.handle ? `Connected as @${auth.handle}` : "Connected", ok: true };
+    return { text: "Not connected", ok: false };
+  }
+
   // src/storage.ts
   var LOCK_STALE_MS = 15 * 60 * 1e3;
   var DEFAULT_SETTINGS = {
@@ -416,9 +424,13 @@ ${WRITING_RULES}`;
     themeRoutes: {},
     vipList: null,
     doorPolicy: DEFAULT_DOOR_POLICY,
-    labels: []
+    labels: [],
+    xClientId: "",
+    xApiOnly: false
   };
   var FALLBACK = {
+    xApiAuth: null,
+    xApiProblem: "",
     settings: DEFAULT_SETTINGS,
     seen: [],
     queue: [],
@@ -638,9 +650,40 @@ ${WRITING_RULES}`;
     out.className = msg.startsWith("Sent") ? "ok" : "err";
     out.textContent = msg;
   }
+  async function renderXStatus(extra) {
+    const s = await getSettings();
+    const st = describeXStatus({ xClientId: input("xClientId").value || s.xClientId }, await get("xApiAuth"), await get("xApiProblem"));
+    const out = $("xStatus");
+    out.className = st.ok ? "ok" : "err";
+    out.textContent = extra ? `${st.text}. ${extra}` : st.text;
+  }
+  async function saveXSettings() {
+    await set("settings", { ...await getSettings(), xClientId: input("xClientId").value.trim(), xApiOnly: input("xApiOnly").checked });
+  }
+  async function connectX() {
+    const clientId = input("xClientId").value.trim();
+    if (!clientId) {
+      await renderXStatus("Paste your X app's Client ID first");
+      return;
+    }
+    $("xStatus").className = "";
+    $("xStatus").textContent = "Waiting for X\u2026";
+    await saveXSettings();
+    const res = await chrome.runtime.sendMessage({ type: "xConnect", clientId });
+    await renderXStatus(res.ok ? void 0 : res.error);
+  }
+  async function disconnectX() {
+    await chrome.runtime.sendMessage({ type: "xDisconnect" });
+    await renderXStatus();
+  }
   async function load() {
     const s = await getSettings();
     $("version").textContent = `v${chrome.runtime.getManifest().version}`;
+    input("xClientId").value = s.xClientId;
+    input("xApiOnly").checked = s.xApiOnly;
+    $("xRedirect").textContent = chrome.identity.getRedirectURL();
+    if (s.xClientId || s.xApiOnly) $("advanced").open = true;
+    await renderXStatus();
     input("accountId").value = s.accountId;
     input("token").value = s.token;
     area("ownerSummary").value = s.ownerSummary;
@@ -703,8 +746,11 @@ ${WRITING_RULES}`;
         opening_time: input("opening_time").value || DEFAULT_DOOR_POLICY.opening_time,
         cooldown_hours: Number(input("cooldown_hours").value)
       },
-      labels
+      labels,
+      xClientId: input("xClientId").value.trim(),
+      xApiOnly: input("xApiOnly").checked
     });
+    void renderXStatus();
     status.className = eff.list ? "ok" : "err";
     status.textContent = eff.list ? "Saved" : `Saved, but Grokmark won't run yet: ${eff.problem}`;
     return !!eff.list;
@@ -824,6 +870,9 @@ ${WRITING_RULES}`;
   $("test").addEventListener("click", test);
   $("addRoute").addEventListener("click", addRoute);
   $("ping").addEventListener("click", ping);
+  $("xConnect").addEventListener("click", () => void connectX());
+  $("xDisconnect").addEventListener("click", () => void disconnectX());
+  $("xApiOnly").addEventListener("change", () => void saveXSettings());
   $("copyPrompt").addEventListener("click", async () => {
     await navigator.clipboard.writeText(VIP_LIST_PROMPT);
     $("copyPrompt").textContent = "Copied";

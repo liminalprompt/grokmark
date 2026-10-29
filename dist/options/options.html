@@ -55,7 +55,7 @@
 <div id="vipStatus" role="status"></div>
 
 <h2>Try it</h2>
-<button id="test">Test on last 10 bookmarks</button> <small>Needs an x.com tab open. Nothing is sent. Mark any verdict you disagree with.</small>
+<button id="test">Test on last 10 bookmarks</button> <small>Needs an x.com tab open, unless the official X API is connected under Advanced. Nothing is sent. Mark any verdict you disagree with.</small>
 <div id="testLine"></div>
 <div id="testOut"></div>
 <p id="sendTest"></p>
@@ -85,6 +85,13 @@
   <div><label for="opening_time">Opening time</label><input id="opening_time" type="time"></div>
   <div><label for="cooldown_hours">Cooldown (hours)</label><input id="cooldown_hours" type="number" min="0" step="0.5"></div>
 </div>
+
+<h3>Use the official X API (optional)</h3>
+<p>By default Grokmark reads bookmarks through your logged-in x.com tab. To use X's official API instead, create an app at developer.x.com, set it up as an OAuth 2.0 public client (PKCE), and add this redirect URL: <code id="xRedirect"></code>. X bills API reads to your own X developer account.</p>
+<label for="xClientId">X app Client ID</label><input id="xClientId" autocomplete="off">
+<button class="primary" id="xConnect">Connect X (beta)</button><button id="xDisconnect">Disconnect</button> <span id="xStatus" role="status"></span>
+<label style="font-weight:normal"><input id="xApiOnly" type="checkbox" style="width:auto"> API only: never fall back to the x.com session</label>
+<small>With API only on, a run fails with a clear message instead of using your x.com session when the X sign-in is missing or expired.</small>
 </details>
 
 <script src="options.js"></script>

@@ -8,6 +8,7 @@ Everything Grokmark can do is declared in `manifest.json`, and everywhere it can
 |---|---|---|
 | `storage` | Saves your settings, the list of bookmarks already scored, the send queue and your marks, on your computer. | Storage is private to this extension. Websites and other extensions cannot read it. It is not synced to your Google account. |
 | `alarms` | Wakes the extension every 30 minutes while Chrome is open to see whether a check is due. | Nothing else. An alarm is a timer. |
+| `identity` | Opens the X sign-in window when you click **Connect X** under Advanced (`chrome.identity.launchWebAuthFlow`), and supplies the redirect address X sends you back to. Added in 0.3.0. | It does not read your Google account or Chrome profile. Nothing happens unless you click Connect X. |
 
 That is the whole list. Grokmark does not ask for `tabs`, `history`, `cookies`, `webRequest`, `scripting`, `downloads` or access to all websites.
 
@@ -17,7 +18,8 @@ Earlier versions asked for `scripting` so the extension could inject its helper 
 
 | Host | Why |
 |---|---|
-| `x.com` | The helper script runs on x.com pages and reads your bookmarks through the same request X's own site makes. The service worker opens `x.com/i/bookmarks` in a background tab once, to learn that request, then closes it. |
+| `x.com` | The helper script runs on x.com pages and reads your bookmarks through the same request X's own site makes. The service worker opens `x.com/i/bookmarks` in a background tab once, to learn that request, then closes it. The same host also covers the X sign-in page in API mode. |
+| `api.x.com` | Only in the optional official X API mode (Advanced). The token exchange and refresh, who you are, and your bookmarks, all with your own X developer app. Unused until you click Connect X. Added in 0.3.0. |
 | `api.cloudflare.com` | One request per bookmark to run the Clef-flash scoring model under your own account and token. |
 | Your webhook hosts | Each webhook URL you paste is asked for as a separate permission when you save. Chrome shows the host and you approve it. Nothing is sent anywhere you did not approve. |
 
@@ -25,19 +27,21 @@ Images attached to a bookmark are fetched from X's image servers (`pbs.twimg.com
 
 ## How this is enforced
 
-`test/network.test.ts` scans every source file for host names and fails if one appears that is not on the list above. Any pull request that adds a destination has to change that test in the open.
+`test/network.test.ts` scans every source file for host names and fails if one appears that is not on the list above. It also pins which files may call `fetch` (`src/clef.ts`, `src/fetchBookmarks.ts`, `src/xApi.ts`) and the exact permissions in the manifest. Any pull request that adds a destination has to change that test in the open.
 
 The service worker never runs code it did not ship with. Manifest V3 forbids remote code, and the build bundles everything into `dist/` with no runtime dependencies; `package.json` lists only build and test tools.
 
 ## What a reviewer should read
 
 - `manifest.json`: the declaration above.
-- `src/fetchBookmarks.ts`: everything that touches X.
+- `src/fetchBookmarks.ts`: everything that touches X's web app (the default session path).
+- `src/xApi.ts`: everything that touches X's official API, including the sign-in and where the tokens are kept.
+- `src/source.ts`: the small pure function that picks between those two, and when a run may fall back.
 - `src/clef.ts`: the one request to Cloudflare, and how images are prepared.
 - `src/webhook.ts`: the one request to your routine, and the payload it carries.
 - `src/clef.ts`, `redact`: how keys are kept out of error messages.
 
-Together those four files are under 500 lines.
+Together those five files are under 750 lines.
 
 ## Verifying a release
 

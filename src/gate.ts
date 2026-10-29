@@ -1,13 +1,18 @@
+import { X_NOT_CONNECTED } from "./messages";
 import type { Settings, State } from "./storage";
 
 export type GateResult = { run: true } | { run: false; why: string };
 
+/** Whether the optional X API is signed in, and why not if it needs attention. */
+export type XApiState = { connected: boolean; problem?: string };
+
 const HOUR = 3600_000;
 
 /** Spec §4: decides whether a check may start. `force` is the popup's "Run now". */
-export function shouldRun(settings: Settings, state: State, now: Date, force = false): GateResult {
+export function shouldRun(settings: Settings, state: State, now: Date, force = false, xApi: XApiState = { connected: false }): GateResult {
   if (!settings.accountId || !settings.token) return { run: false, why: "Add your Cloudflare account ID and token" };
   if (!settings.vipList) return { run: false, why: "Finish setup: write one sentence about yourself" };
+  if (settings.xApiOnly && !xApi.connected) return { run: false, why: xApi.problem || X_NOT_CONNECTED };
   if (force) return { run: true };
 
   const [h, m] = settings.doorPolicy.opening_time.split(":").map(Number) as [number, number];

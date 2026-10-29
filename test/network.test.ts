@@ -7,8 +7,8 @@ import { describe, expect, it } from "vitest";
  * Dynamic destinations not visible as literals: the webhook URLs the user pastes (approved per host by Chrome), and
  * the image URLs that come with a bookmark (X's image servers), fetched in src/clef.ts.
  */
-const ALLOWED_HOSTS = ["api.cloudflare.com", "api2.cursor.sh", "x.com"];
-const FETCH_SITES = ["src/clef.ts", "src/fetchBookmarks.ts"];
+const ALLOWED_HOSTS = ["api.cloudflare.com", "api.x.com", "api2.cursor.sh", "x.com"];
+const FETCH_SITES = ["src/clef.ts", "src/fetchBookmarks.ts", "src/xApi.ts"];
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name: string) => {
@@ -31,9 +31,9 @@ describe("network allowlist", () => {
     expect(callers).toEqual(FETCH_SITES);
   });
 
-  it("asks for no permission beyond storage and alarms", () => {
+  it("asks for no permission beyond storage, alarms and identity", () => {
     const m = JSON.parse(readFileSync("manifest.json", "utf8")) as { permissions: string[]; host_permissions: string[] };
-    expect(m.permissions.sort()).toEqual(["alarms", "storage"]);
-    expect(m.host_permissions.sort()).toEqual(["https://api.cloudflare.com/*", "https://x.com/*"]);
+    expect(m.permissions.sort()).toEqual(["alarms", "identity", "storage"]);
+    expect(m.host_permissions.sort()).toEqual(["https://api.cloudflare.com/*", "https://api.x.com/*", "https://x.com/*"]);
   });
 });
