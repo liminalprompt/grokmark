@@ -4,7 +4,7 @@ Only your best bookmarks get seen. It runs inside Chrome while you browse.
 
 ![The Grokmark homepage: Send the best X bookmarks to your team](docs/homepage.png)
 
-Grokmark is an open-source Chrome extension (Manifest V3). While you are on x.com it scores your new X bookmarks with Cloudflare's **Clef-flash** decision model, decides in plain code whether each one is a very important post, a VIP, and sends only the VIPs to your **Grok Bot** routine webhook. No X developer app, no server, no X API bill. Nothing leaves your machine except the scoring call to Cloudflare and the VIPs you send to your own routine.
+Grokmark is an open-source Chrome extension (Manifest V3). While you are on x.com it scores your new X bookmarks with Cloudflare's **Clef-flash** decision model, decides in plain code whether each one is a very important post, a VIP, and sends only the VIPs to your **Grok Bot** routine webhook (a Slack incoming webhook works too). No X developer app, no server, no X API bill. Nothing leaves your machine except the scoring call to Cloudflare and the VIPs you send to your own routine.
 
 > **Heads up:** Grokmark reads your bookmarks the same way x.com does in your browser, through your own logged-in session, with no password or API key. That isn't an official X API, so X could change or limit it. An optional official route is coming next: Advanced mode will let you connect your own X developer app. Grokmark isn't on the Chrome Web Store; install it from this repo.
 
