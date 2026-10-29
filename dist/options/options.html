@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grokmark setup</title>
+<style>
+  :root { --bg:#fff; --fg:#161616; --muted:#666; --line:#d9d9d9; --accent:#2a5bd7; --bad:#b3261e; --ok:#1a7f37; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161616; --fg:#eee; --muted:#9a9a9a; --line:#333; --accent:#7ea2ff; --bad:#ff8a80; --ok:#5fd68a; } }
+  body { background:var(--bg); color:var(--fg); font:14px/1.5 system-ui, sans-serif; max-width:720px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:22px; margin:0 0 4px } h2 { font-size:16px; margin:32px 0 8px; padding-top:16px; border-top:1px solid var(--line) }
+  h3 { font-size:14px; margin:24px 0 6px }
+  p, small { color:var(--muted) } label { display:block; margin:12px 0 4px; font-weight:600 }
+  input, textarea, select { width:100%; box-sizing:border-box; padding:8px; border:1px solid var(--line); border-radius:6px; background:transparent; color:var(--fg); font:inherit }
+  textarea { min-height:64px } textarea#vipListJson { min-height:220px; font:12px/1.4 ui-monospace, monospace }
+  button { padding:8px 14px; border:1px solid var(--accent); border-radius:6px; background:transparent; color:var(--accent); font:inherit; cursor:pointer; margin:8px 8px 0 0 }
+  button.primary { background:var(--accent); color:var(--bg) }
+  .row { display:grid; grid-template-columns:1fr 2fr 2fr; gap:8px; align-items:center; margin-top:8px }
+  .row small { grid-column:2 / span 2; margin-top:-4px }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px }
+  .err { color:var(--bad) } .ok { color:var(--ok) }
+  details { margin-top:40px; border-top:1px solid var(--line); padding-top:8px }
+  summary { font-size:16px; font-weight:600; cursor:pointer; padding:8px 0 }
+  td select { max-width:11rem; padding:4px }
+  td.mark button { padding:2px 8px; margin:6px 6px 0 0; font-size:12px }
+  td.mark small { display:block; margin-top:6px }
+  table { width:100%; border-collapse:collapse; margin-top:12px } td, th { text-align:left; padding:6px; border-bottom:1px solid var(--line); vertical-align:top }
+</style>
+</head>
+<body>
+<h1>Grokmark setup <small id="version"></small></h1>
+<p>Only your best bookmarks get seen.</p>
+
+<h2>1. Cloudflare</h2>
+<p>Create a Workers AI API token scoped to Workers AI only. Grokmark sends it only to api.cloudflare.com.</p>
+<label for="accountId">Account ID</label><input id="accountId" autocomplete="off">
+<label for="token">Workers AI token</label><input id="token" type="password" autocomplete="off">
+
+<h2>2. About you</h2>
+<p>The bouncer reads this before judging every bookmark.</p>
+<label for="ownerSummary">One sentence about you</label>
+<textarea id="ownerSummary" placeholder="What you build, the tools you use every day, and what you want to learn."></textarea>
+<label for="watchNames">Names to watch</label>
+<input id="watchNames" placeholder="Grok Bot, Cloudflare Workers, Jev (TypeSafe's small decision model)">
+<small>Products, tools, companies or people, separated by commas. Add a few words in brackets for anything obscure.</small>
+
+<h2>3. Grok Bot webhook</h2>
+<p>Copy the URL and key from the routine's Webhook section in the Grok Bot desktop app. Every VIP goes here.</p>
+<label for="webhookUrl">Webhook URL</label><input id="webhookUrl" placeholder="https://api2.cursor.sh/automations/webhook/…" autocomplete="off">
+<label for="webhookKey">Webhook key</label><input id="webhookKey" type="password" placeholder="crsr_…" autocomplete="off">
+<button id="ping">Send a test ping</button> <span id="pingStatus" role="status"></span>
+<small>Posts one sample item to this webhook right now, so you can see the routine fire.</small>
+
+<p><button class="primary" id="save">Save</button> <span id="saveStatus" role="status"></span></p>
+<div id="vipStatus" role="status"></div>
+
+<h2>Try it</h2>
+<button id="test">Test on last 10 bookmarks</button> <small>Needs an x.com tab open. Nothing is sent. Mark any verdict you disagree with.</small>
+<div id="testLine"></div>
+<div id="testOut"></div>
+<p id="sendTest"></p>
+<p id="labels"></p>
+
+<details id="advanced">
+<summary>Advanced</summary>
+
+<h3>More routes</h3>
+<p>The webhook above is the route <code>grok_bot</code>. Add a route to send some themes to a different routine.</p>
+<div id="routes"></div>
+<div class="row"><input id="newRoute" placeholder="route name, e.g. grok_reply"><button id="addRoute">Add route</button><span></span></div>
+
+<h3>Where each theme goes</h3>
+<div id="themeRoutes"></div>
+
+<h3>Your own VIP List</h3>
+<p>Leave this empty to use the stock list built from your sentence and names. To write your own, copy the prompt, run it in the AI you already use, and paste the JSON it returns.</p>
+<button id="copyPrompt">Copy the VIP List prompt</button>
+<label for="vipListJson">VIP List JSON</label>
+<textarea id="vipListJson" spellcheck="false"></textarea>
+
+<h3>Door Policy</h3>
+<div class="grid2">
+  <div><label for="vip_min_score">VIP score threshold (0 to 1)</label><input id="vip_min_score" type="number" step="0.05" min="0" max="1"></div>
+  <div><label for="batch_size">Batch size</label><input id="batch_size" type="number" min="1"></div>
+  <div><label for="opening_time">Opening time</label><input id="opening_time" type="time"></div>
+  <div><label for="cooldown_hours">Cooldown (hours)</label><input id="cooldown_hours" type="number" min="0" step="0.5"></div>
+</div>
+</details>
+
+<script src="options.js"></script>
+</body>
+</html>

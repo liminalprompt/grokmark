@@ -1,0 +1,7 @@
+node_modules/
+
+.claude/
+.DS_Store
+HANDOFF.md
+VIP-LIST-*.json
+grokmark-*.zip

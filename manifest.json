@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Grokmark",
+  "version": "0.2.9",
+  "description": "Only your best bookmarks get seen. Scores your X bookmarks against your VIP List and sends the VIPs to Grok Bot.",
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://api.cloudflare.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "options_page": "options/options.html",
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Grokmark"
+  }
+}

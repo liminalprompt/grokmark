@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Grokmark</title>
+<style>
+  :root { --bg:#fff; --fg:#161616; --muted:#666; --accent:#2a5bd7; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161616; --fg:#eee; --muted:#9a9a9a; --accent:#7ea2ff; } }
+  body { background:var(--bg); color:var(--fg); font:13px/1.5 system-ui, sans-serif; width:280px; margin:0; padding:14px }
+  h1 { font-size:14px; letter-spacing:.08em; margin:0 0 8px; color:var(--muted) }
+  dl { display:grid; grid-template-columns:1fr auto; gap:2px 12px; margin:8px 0 } dt { color:var(--muted) } dd { margin:0; text-align:right }
+  button { width:100%; padding:8px; border:1px solid var(--accent); border-radius:6px; background:transparent; color:var(--accent); font:inherit; cursor:pointer; margin-top:6px }
+  #msg { color:var(--muted); margin-top:8px; min-height:1.5em }
+</style>
+</head>
+<body>
+<h1>GROKMARK</h1>
+<div id="status"></div>
+<dl id="stats"></dl>
+<button id="run">Run now</button>
+<button id="setup">Open setup</button>
+<div id="msg" role="status"></div>
+<script src="popup.js"></script>
+</body>
+</html>

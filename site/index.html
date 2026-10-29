@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grokmark: send the best X bookmarks to your team</title>
+<meta name="description" content="Grokmark reads your X bookmarks while you browse and sends only the very important posts to your Grok Bot routine or your Slack.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<section class="journey" id="top">
+  <div class="stage">
+    <canvas id="rope" aria-hidden="true"></canvas>
+
+    <header class="nav">
+      <a class="wordmark" href="#top">grokmark<span>.si</span></a>
+      <a class="navlink" href="#how">How it works</a>
+    </header>
+
+    <div class="hero-copy" data-fade="0.04,0.16">
+      <h1>Send the best<br>X bookmarks<br>to your team</h1>
+      <div class="hero-row">
+        <p class="lede">Start doing more from your bookmarks on X.</p>
+        <a class="cta" href="https://github.com/liminalprompt/grokmark/releases/latest"><span>Download from GitHub</span><i aria-hidden="true">→</i></a>
+      </div>
+      <p class="mono links"><a href="#how">How it works</a><a href="#example">An example</a><a href="#cost">Cost</a><span class="hint">Scroll to get in ↓</span></p>
+    </div>
+
+    <p class="caption" data-show="0.2,0.27,0.36,0.42">It picks what you would pick<small>One sentence about your work, a few names you follow, and the bouncer has your taste. Correct it once and it sharpens.</small></p>
+    <p class="caption" data-show="0.46,0.52,0.62,0.68">Your agent gets only the good ones<small>Each VIP arrives with a theme and an instruction, so Grok Bot can summarize, draft or build without being asked.</small></p>
+
+    <div class="finale" data-show="0.8,0.9,1.1,1.2">
+      <h2>Get started</h2>
+      <a class="cta" href="https://github.com/liminalprompt/grokmark/releases/latest"><span>Download from GitHub</span><i aria-hidden="true">→</i></a>
+    </div>
+  </div>
+</section>
+
+<main>
+  <section id="example" class="block">
+    <h2>Turn quality bookmarks into agentic work</h2>
+    <ol class="flow">
+      <li><span class="label mono">Bookmarked</span>
+        <div class="post" aria-label="A post on X, just bookmarked">
+          <div class="post-head"><span class="avatar" aria-hidden="true"></span><span class="post-name">lauren <span class="post-handle">@poteto</span></span></div>
+          <p class="post-text">i've gotten a lot of questions about how i manage my X account with grok bot, so i'm sharing my bot tibot today! he watches your mentions and sends you a sorted digest, and he never posts for you.</p>
+          <div class="post-actions" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 1 3.6 7.2L3 21l1.8-3.6A9 9 0 0 1 3 12z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4M21 7H8a4 4 0 0 0-4 4M7 21l-4-4 4-4M3 17h13a4 4 0 0 0 4-4"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.5-9 9-9 9z"/></svg>
+            <span class="bm"><svg viewBox="0 0 24 24" class="on"><path d="M6 3h12v18l-6-4-6 4z"/></svg></span>
+          </div>
+        </div></li>
+      <li><span class="label mono">Scored</span><p class="serif">Scored against your themes.</p><pre class="config payload" aria-label="What the model answered"><span class="k">grok-bot 101</span><span class="v">0.78</span>
+<span class="k">launches</span><span class="v">0.41</span>
+<span class="k">giveaway</span><span class="v">0.24</span>
+<span class="k">value</span><span class="v">0.75 → VIP</span></pre></li>
+      <li><span class="label mono">Delivered</span><p class="serif">Sent to a webhook.</p><pre class="config payload" aria-label="The item as sent"><span class="k">sent to</span><span class="v">remix ideas</span>
+<span class="k">theme</span><span class="v">grok-bot 101</span>
+<span class="k">score</span><span class="v">0.75</span>
+<span class="k">post</span><span class="v">x.com/poteto/status/…</span></pre></li>
+      <li><span class="label mono">Acted on</span><p class="serif">Grok Bot turns it into an idea.</p><pre class="config payload reply" aria-label="What the routine wrote"><span class="v">@poteto's bot, 848K views. Watches her mentions, sends a sorted digest, never posts. Idea: your own digest, scored first with Clef.</span></pre></li>
+    </ol>
+  </section>
+
+  <section id="list" class="block">
+    <h2>Every bookmark gets a score</h2>
+    <p class="body">Clef-flash, a small Cloudflare model, scores each one. A VIP is a very important post, one worth sending to your team. The rest stay exactly where they are, as bookmarks on X.</p>
+    <ol class="ledger">
+      <li><span class="who">a tool maker</span><span class="what">We open-sourced our eval harness. Repo and numbers inside.</span><span class="score">0.91</span><span class="stamp admit">Sent<small>numbers and benchmarks</small></span></li>
+      <li><span class="who">a tool you use</span><span class="what">Version 3.2 is out. Here's what's new.</span><span class="score">0.88</span><span class="stamp admit">Sent<small>launches and releases</small></span></li>
+      <li><span class="who">a thread</span><span class="what">1/27 on why this one chart changes everything.</span><span class="score">0.41</span><span class="stamp hold">Not sent<small>below the bar</small></span></li>
+      <li><span class="who">a brand</span><span class="what">Giveaway! RT and follow to win a free subscription.</span><span class="score">0.04</span><span class="stamp deny">Not sent<small>ad or giveaway</small></span></li>
+    </ol>
+  </section>
+
+  <section id="how" class="block">
+    <h2>Three steps, then just use X</h2>
+    <div class="split how">
+    <ol class="steps">
+      <li><span class="num">1</span><div><h3>Paste a Cloudflare key</h3><p>A free Cloudflare account runs the bouncer, a small model called Clef-flash.</p></div></li>
+      <li><span class="num">2</span><div><h3>Describe what matters</h3><p>One sentence on what you build, plus the tools and people you follow.</p></div></li>
+      <li><span class="num">3</span><div><h3>Paste one webhook</h3><p>Every VIP goes to your Grok Bot routine. Want more? Add routes under Advanced.</p></div></li>
+      </ol>
+    <div class="mock" aria-label="The setup page, drawn">
+      <div class="mock-bar"><span>Grokmark setup</span><span class="mock-ver">v0.2.9</span></div>
+      <div class="mock-sec">1. Cloudflare</div>
+      <label>Account ID</label><div class="mock-in">0f3e…c21a</div>
+      <label>Workers AI token</label><div class="mock-in">••••••••••••••••••••••••</div>
+      <div class="mock-sec">2. About you</div>
+      <label>One sentence about you</label><div class="mock-in tall">I build on Cloudflare Workers, use Grok Bot every day, and want to get better at short-form writing.</div>
+      <label>Names to watch</label><div class="mock-in">Grok Bot, Cloudflare Workers, Jev (TypeSafe's small decision model)</div>
+      <div class="mock-sec">3. Grok Bot webhook</div>
+      <label>Webhook URL</label><div class="mock-in">https://api2.cursor.sh/automations/webhook/…</div>
+      <label>Webhook key</label><div class="mock-in">crsr_••••••••••••</div>
+      <div class="mock-row"><span class="mock-btn">Save</span></div>
+    </div>
+    </div>
+  </section>
+
+  <section id="door" class="block">
+    <h2>The settings<br>come tuned</h2>
+    <div class="split">
+    <div>
+      <ul class="body facts">
+        <li><strong>Threshold.</strong> A bookmark scoring 0.5 or more is a VIP.</li>
+        <li><strong>Batch.</strong> VIPs go out five at a time, or after a day.</li>
+        <li><strong>Opening time.</strong> Checks start after 9 pm.</li>
+        <li><strong>Cooldown.</strong> At most one check every four hours.</li>
+      </ul>
+      <p class="body">Change any of them under Advanced.</p>
+    </div>
+    <pre class="config" aria-label="Default settings"><span class="k">VIP threshold</span>   <span class="v">0.50</span>
+<span class="k">Send in batches of</span>  <span class="v">5</span>
+<span class="k">Checks start at</span>   <span class="v">21:00</span>
+<span class="k">Hours between checks</span>  <span class="v">4</span></pre>
+    </div>
+  </section>
+
+  <section id="cost" class="block">
+    <h2>Free to try</h2>
+    <div class="split">
+    <div>
+      <ul class="body facts">
+        <li><strong>Grokmark.</strong> Free. Open source, MIT licensed.</li>
+        <li><strong>Cloudflare.</strong> Free on a Workers account.</li>
+        <li><strong>Grok Bot.</strong> Whatever plan you already have. The routine reads the posts you send it within that plan's limits.</li>
+      </ul>
+    </div>
+    <pre class="config" aria-label="Cost at a glance"><span class="k">Grokmark</span><span class="v">free</span>
+<span class="k">Clef-flash</span><span class="v">free, about 2,500 posts a day</span>
+<span class="k">Grok Bot or Slack</span><span class="v">your existing plan</span></pre>
+    </div>
+  </section>
+
+  <section id="install" class="block final">
+    <h2>Runs in Chrome<br>Just use X</h2>
+    <a class="cta" href="https://github.com/liminalprompt/grokmark/releases/latest"><span>Download from GitHub</span><i aria-hidden="true">→</i></a>
+    <p class="fine">Free and open source. Download it from GitHub and load the folder in Chrome. It talks to X to read your bookmarks, to Cloudflare to score them, and to your own Grok Bot routine to send them.</p>
+  </section>
+</main>
+
+<footer class="mono"><span>grokmark.si</span><a href="https://x.com/liminalprompt">Made by @liminalprompt</a></footer>
+
+<script type="module" src="hero.js"></script>
+<script>
+  // Stamp each ledger row as it scrolls into view.
+  const rows = document.querySelectorAll(".ledger li");
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    }), { threshold: 0.6 });
+    rows.forEach((r, i) => { r.style.setProperty("--d", i * 0.12 + "s"); io.observe(r); });
+  } else rows.forEach((r) => r.classList.add("in"));
+</script>
+</body>
+</html>

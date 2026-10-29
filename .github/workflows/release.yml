@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Zip the build without source maps
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          (cd dist && zip -qr "../grokmark-${VERSION}.zip" . -x "*.map")
+          shasum -a 256 "grokmark-${VERSION}.zip" | tee SHA256SUMS.txt
+      - name: Attest build provenance
+        # GitHub only stores attestations for public repositories; until the repo is public this step is informational.
+        continue-on-error: true
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: grokmark-*.zip
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SUM=$(cut -d' ' -f1 SHA256SUMS.txt)
+          {
+            echo "Built by GitHub Actions from the tagged source. See CHANGELOG.md."
+            echo
+            echo "SHA-256 of grokmark-${VERSION}.zip: \`${SUM}\`"
+            echo
+            echo "Verify: \`gh attestation verify grokmark-${VERSION}.zip --repo ${GITHUB_REPOSITORY}\`"
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" "grokmark-${VERSION}.zip" SHA256SUMS.txt --title "Grokmark ${VERSION}" --notes-file notes.md
