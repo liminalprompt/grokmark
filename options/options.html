@@ -89,7 +89,7 @@
 <h3>Use the official X API (optional)</h3>
 <p>By default Grokmark reads bookmarks through your logged-in x.com tab. To use X's official API instead, create an app at developer.x.com, set it up as an OAuth 2.0 public client (PKCE), and add this redirect URL: <code id="xRedirect"></code>. X bills API reads to your own X developer account.</p>
 <label for="xClientId">X app Client ID</label><input id="xClientId" autocomplete="off">
-<button class="primary" id="xConnect">Connect X</button><button id="xDisconnect">Disconnect</button> <span id="xStatus" role="status"></span>
+<button class="primary" id="xConnect">Connect X (beta)</button><button id="xDisconnect">Disconnect</button> <span id="xStatus" role="status"></span>
 <label style="font-weight:normal"><input id="xApiOnly" type="checkbox" style="width:auto"> API only: never fall back to the x.com session</label>
 <small>With API only on, a run fails with a clear message instead of using your x.com session when the X sign-in is missing or expired.</small>
 </details>
