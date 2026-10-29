@@ -30,7 +30,7 @@ jobs:
       - name: Attest build provenance
         # GitHub only stores attestations for public repositories; until the repo is public this step is informational.
         continue-on-error: true
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: grokmark-*.zip
       - name: Create the GitHub release
