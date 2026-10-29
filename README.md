@@ -12,6 +12,8 @@ Grokmark is an open-source Chrome extension (Manifest V3). While you are on x.co
 
 ![From bookmark to workflow: a post is bookmarked, scored, delivered to the routine, and written up](docs/flow.png)
 
+<img src="docs/popup.png" width="314" alt="The Grokmark popup: door status, last run stats (fetched, VIP / keep / archive, sent), and Run now and Open setup buttons">
+
 ## Two ways to read bookmarks
 
 - **Your x.com session (default).** Needs an x.com tab open and nothing else: no developer app, no API bill.
@@ -28,6 +30,8 @@ Grokmark is an open-source Chrome extension (Manifest V3). While you are on x.co
 1. **Cloudflare.** Create an API token scoped to **Workers AI only** and note your account ID. Paste both. Set a usage alert in Cloudflare; a text-only bookmark costs about $0.00003.
 2. **About you.** One sentence on what you build, the tools you use every day and what you want to learn. Then the names you follow, separated by commas: products, tools, companies, people. Add a few words in brackets for anything obscure, for example `Jev (TypeSafe's small decision model)`. The bouncer reads this before judging every bookmark.
 3. **Grok Bot webhook.** Paste the webhook URL and key from the routine's Webhook section in the Grok Bot desktop app. Click **Send a test ping** and watch the routine fire.
+
+<img src="docs/setup-page.png" width="600" alt="The Grokmark setup page: Cloudflare account ID and token, one sentence about you, names to watch, Grok Bot webhook URL and key, and Test on last 10 bookmarks">
 
 Save. Then open an x.com tab and click **Test on last 10 bookmarks**: it shows each verdict and score and sends nothing. If you agree with the verdicts, click **Send these VIPs to the webhook now** to see the whole loop. Mark any verdict you disagree with; the marks build a tuning prompt (under Advanced) for the AI you already use.
 
