@@ -6,6 +6,8 @@ Only your best bookmarks get seen. It runs inside Chrome while you browse.
 
 See it at **[grokmark.si](https://grokmark.si)**.
 
+Not affiliated with SpaceXSI.
+
 Grokmark is an open-source Chrome extension (Manifest V3). While you are on x.com it scores your new X bookmarks with Cloudflare's **Clef-flash** decision model, decides in plain code whether each one is a very important post, a VIP, and sends only the VIPs to your **Grok Bot** routine webhook (a Slack incoming webhook works too). No X developer app, no server, no X API bill. Nothing leaves your machine except the scoring call to Cloudflare and the VIPs you send to your own routine.
 
 > **Heads up:** Grokmark reads your bookmarks the same way x.com does in your browser, through your own logged-in session, with no password or API key. That isn't an official X API, so X could change or limit it. An optional official X API mode is available now under Advanced: connect your own X developer app (see [Setup](docs/setup.md#optional-official-x-api)). Grokmark isn't on the Chrome Web Store; install it from this repo.
