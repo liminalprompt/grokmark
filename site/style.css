@@ -1,3 +1,10 @@
+/* self-hosted, latin subset */
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400 500; font-display: swap; src: url(fonts/inter-latin-var.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Instrument Serif"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/instrument-serif-regular.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Instrument Serif"; font-style: italic; font-weight: 400; font-display: swap; src: url(fonts/instrument-serif-italic.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "DM Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/dm-mono-400.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "DM Mono"; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/dm-mono-500.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
 :root {
   --bg: #0c0a10; --ink: #f3ecdf; --quiet: #9b9386; --line: #f3ecdf24;
   --rope: #c0163a; --brass: #d8ab4f; --ok: #8fe3a6; --bad: #ff6b78;
@@ -17,9 +24,14 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; margin: 0; }
 .stage {
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
   display: flex; flex-direction: column; justify-content: space-between;
-  background: radial-gradient(900px 620px at 72% 38%, #3a1c2c 0%, #1b1020 45%, transparent 75%), var(--bg);
+  background: url(poster-desktop.webp) center / cover no-repeat, radial-gradient(900px 620px at 72% 38%, #3a1c2c 0%, #1b1020 45%, transparent 75%), var(--bg);
 }
-#rope { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+@media (max-aspect-ratio: 17/20) {
+  .stage { background-image: url(poster-mobile.webp), radial-gradient(900px 620px at 72% 38%, #3a1c2c 0%, #1b1020 45%, transparent 75%); }
+}
+/* the canvas fades in over the poster once its first frame is drawn */
+#rope { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .5s ease-out; }
+#rope.ready { opacity: 1; }
 .nav, .hero-copy { position: relative; z-index: 1; }
 .caption, .finale { position: absolute; z-index: 1; left: 0; right: 0; text-align: center; opacity: 0; pointer-events: none; padding: 0 16px; }
 .caption { bottom: 12%; margin: 0 auto; max-width: 18ch; padding: 48px 64px 56px; border-radius: 50%; background: radial-gradient(ellipse at center, #000c 0%, #0009 45%, #0000 72%); font-family: var(--serif); font-size: clamp(40px, 6vw, 96px); line-height: 1; letter-spacing: -.02em; text-shadow: 0 2px 24px #000, 0 2px 60px #000; }
@@ -29,7 +41,6 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; margin: 0; }
 .finale h2 { margin: 0 auto 24px; max-width: none; font-size: clamp(48px, 8vw, 120px); text-shadow: 0 2px 40px #000c; }
 .finale .label { margin-bottom: 12px; }
 .no-3d .journey, .reduced .journey { height: 100svh; }
-.no-3d .stage { background: radial-gradient(900px 620px at 72% 38%, #3a1c2c 0%, #1b1020 45%, transparent 75%), var(--bg); }
 .no-3d .caption, .no-3d .finale, .reduced .caption, .reduced .finale { display: none; }
 .nav { display: flex; justify-content: space-between; align-items: center; padding: 22px clamp(16px, 4vw, 48px); }
 .wordmark { font-family: var(--serif); font-size: 28px; text-decoration: none; letter-spacing: -.01em; }

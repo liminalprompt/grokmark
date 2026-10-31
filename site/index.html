@@ -5,16 +5,65 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Grokmark: send the best X bookmarks to your team</title>
 <meta name="description" content="Grokmark reads your X bookmarks while you browse and sends only the very important posts to your Grok Bot routine or your Slack.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#0c0a10">
+<link rel="canonical" href="https://grokmark.si/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Grokmark">
+<meta property="og:title" content="Grokmark: send the best X bookmarks to your team">
+<meta property="og:description" content="Grokmark reads your X bookmarks while you browse and sends only the very important posts to your Grok Bot routine or your Slack.">
+<meta property="og:url" content="https://grokmark.si/">
+<meta property="og:image" content="https://grokmark.si/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Grokmark: send the best X bookmarks to your team, over a velvet-rope club entrance full of Grok Bots.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Grokmark: send the best X bookmarks to your team">
+<meta name="twitter:description" content="Grokmark reads your X bookmarks while you browse and sends only the very important posts to your Grok Bot routine or your Slack.">
+<meta name="twitter:image" content="https://grokmark.si/og.jpg">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
 } }
 </script>
+<script>
+// Decide the 3D tier before first paint. "none" keeps the static poster and never
+// touches three.js; "lite" is the phone scene; "full" is the desktop scene.
+// Must stay AFTER the import map: some browsers ignore an import map that appears
+// once any module load (including a modulepreload) has started.
+(function () {
+  var d = document.documentElement, n = navigator, c = n.connection || {};
+  var mq = function (q) { return matchMedia(q).matches; };
+  var reduced = mq("(prefers-reduced-motion: reduce)");
+  var coarse = mq("(pointer: coarse)");
+  // Only truly weak devices skip 3D. WebKit clamps hardwareConcurrency to 4 or 8 on
+  // iPhones, so a higher threshold would wrongly send every iPhone to "none".
+  // deviceMemory is Chrome-only; undefined compares false elsewhere.
+  var skip = reduced || c.saveData === true || /^(slow-)?2g$/.test(c.effectiveType || "") ||
+    n.deviceMemory <= 2 || n.hardwareConcurrency <= 2;
+  var lite = coarse || mq("(max-width: 759px)");
+  var force = /[?&]3d=(full|lite|off)\b/.exec(location.search); // testing override
+  var tier = force ? { full: "full", lite: "lite", off: "none" }[force[1]] : skip ? "none" : lite ? "lite" : "full";
+  d.dataset.tier = tier;
+  if (tier === "none") {
+    d.classList.add("no-3d");
+    if (reduced) d.classList.add("reduced");
+    return;
+  }
+  var base = "https://cdn.jsdelivr.net/npm/three@0.160.0/";
+  ["build/three.module.js", "examples/jsm/environments/RoomEnvironment.js", "examples/jsm/geometries/RoundedBoxGeometry.js"].forEach(function (f) {
+    var l = document.createElement("link");
+    l.rel = "modulepreload";
+    l.href = base + f;
+    document.head.appendChild(l);
+  });
+})();
+</script>
+<link rel="preload" as="image" type="image/webp" href="poster-mobile.webp" media="(max-aspect-ratio: 17/20)">
+<link rel="preload" as="image" type="image/webp" href="poster-desktop.webp" media="(min-aspect-ratio: 17/20)">
+<link rel="preload" as="font" type="font/woff2" href="fonts/instrument-serif-regular.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/inter-latin-var.woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
