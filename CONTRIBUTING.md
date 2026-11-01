@@ -27,7 +27,7 @@ The code is TypeScript with no framework. A map:
 - `src/stockRubric.ts` is the stock VIP List. `src/effectiveList.ts` decides which list runs.
 - `src/prompt.ts` holds the prompts users copy into their own AI.
 - `src/webhook.ts` batches and sends. `src/background.ts` runs the show.
-- `options/` is the setup page, `popup/` the popup, `site/` the landing page.
+- `options/` is the setup page, `popup/` the popup. The landing page is not here; it lives in `liminalprompt/grokmark-site`.
 
 Every change needs `npm test` and `npm run typecheck` green. Bump the version in `manifest.json` and `package.json` when you change anything a user can see; the setup page shows it so people can tell a reload took.
 

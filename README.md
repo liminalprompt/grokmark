@@ -92,7 +92,7 @@ npm run typecheck
 npm run build    # writes dist/
 ```
 
-Everything that touches X's web app lives in `src/fetchBookmarks.ts`, everything that touches X's official API in `src/xApi.ts`, and `src/source.ts` chooses between them; everything that touches Clef's response shape lives in `parseResponse` in `src/clef.ts`; the stock VIP List is `src/stockRubric.ts` and `src/effectiveList.ts` decides which list runs. The landing page is `site/`, served by the `landing` preview.
+Everything that touches X's web app lives in `src/fetchBookmarks.ts`, everything that touches X's official API in `src/xApi.ts`, and `src/source.ts` chooses between them; everything that touches Clef's response shape lives in `parseResponse` in `src/clef.ts`; the stock VIP List is `src/stockRubric.ts` and `src/effectiveList.ts` decides which list runs. The landing page at grokmark.si lives in its own repo, `liminalprompt/grokmark-site`.
 
 ## Author
 
